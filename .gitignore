@@ -1,0 +1,7 @@
+# Ignorar arquivos de dados
+*.csv
+data/
+data_processed/
+__pycache__/
+.claude/
+.gemini/
