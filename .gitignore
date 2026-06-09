@@ -1,5 +1,4 @@
-# Ignorar arquivos de dados
-*.csv
+# Ignorar arquivos de dados brutos, mas permitir results.csv
 data/
 data_processed/
 __pycache__/
