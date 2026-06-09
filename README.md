@@ -64,3 +64,13 @@ Os resultados alimentam a planilha `results.csv`.
 4. Pipeline de treinamento projetado (Plano Etapa 3).
 
 **Ação Pendente:** Executar o script da Etapa 3 no Colab para treinar os modelos, exportar `results.csv` e gerar os gráficos da Etapa 4.
+
+## 6. Estrutura do Repositório
+
+O repositório organiza o código e a documentação nos seguintes diretórios:
+
+* **`docs/`**: Documentação principal do projeto. Contém a metodologia acadêmica, o guia do projeto, o registro de decisões/dificuldades e os planos técnicos das etapas.
+* **`notebooks/`**: Arquivos executáveis do Jupyter/Colab (`.ipynb`). Inclui as execuções reais da Etapa 1 (processamento de dados) e Etapa 2 (arquitetura do modelo).
+* **`src/`**: Códigos-fonte em Python (`.py`), englobando o pipeline de dados e a classe do modelo.
+* **`guias/`**: Materiais de apoio para a equipe, incluindo guias de estudo para a defesa e anotações específicas sobre o congelamento de Transformers.
+* **`tests/`**: Scripts de teste unitário para validar o funcionamento do modelo e das funções auxiliares.
