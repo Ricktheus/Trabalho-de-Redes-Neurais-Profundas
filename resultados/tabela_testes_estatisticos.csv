@@ -1,0 +1,7 @@
+cenario,comparacao,descricao,delta_pp,welch_t,p_welch,p_mannwhitney,cohen_d,magnitude,sig_p<0.10
+T2,C2 vs C1,Domain Shift — Freeze Lower vs Full,1.185,2.994,0.0855,0.1,2.445,grande,SIM
+T2,C3 vs C1,Domain Shift — Freeze Upper vs Full (aposta H2),-2.97,-2.887,0.0736,0.1,-2.357,grande,SIM
+T2,C4 vs C1,Domain Shift — Frozen Encoder vs Full,-17.671,-11.117,0.0052,0.1,-9.077,grande,SIM
+T3,C2 vs C1,Language Shift — Freeze Lower vs Full (aposta H1),0.025,0.097,0.9299,1.0,0.079,desprezível,não
+T3,C3 vs C1,Language Shift — Freeze Upper vs Full,-1.855,-6.726,0.0062,0.1,-5.491,grande,SIM
+T3,C4 vs C1,Language Shift — Frozen Encoder vs Full,-7.42,-29.972,0.0007,0.1,-24.472,grande,SIM

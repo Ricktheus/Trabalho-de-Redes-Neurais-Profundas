@@ -53,17 +53,31 @@ Esse resultado é ouro puro: **prova empírica de que as representações multil
 
 ---
 
-## 4. Status e Próximos Passos
+## 4. A Comprovação Estatística (Etapa 4)
+
+Na Etapa 4 submetemos as 48 medições (`results.csv`) a testes formais para decidir, com rigor, o destino das duas hipóteses. Usamos o teste **t de Welch** (primário), o **Mann-Whitney U** (confirmação não-paramétrica) e o **Cohen's *d*** (tamanho de efeito), comparando cada estratégia de congelamento contra a baseline C1, com limiar de significância p < 0.10.
+
+O veredito foi cirúrgico:
+- **H1 (Language Shift) — REFUTADA por inexistência.** A baseline C1 não cai ao migrar para o português; ela *sobe* (Δ T1−T3 = −0.83 pp). Não há queda a mitigar. C2 vs C1 em PT: Δ = +0.03 pp (p = 0.93).
+- **H2 (Domain Shift) — REFUTADA e invertida.** Congelar o topo (C3) *piorou* o desempenho em Beleza de forma significativa (Δ = −2.97 pp vs C1, p = 0.074).
+- **⭐ Achado emergente — CONFIRMADO.** Quem realmente mitiga o *Domain Shift* é o **C2 (Freeze Lower)**: Δ = +1.19 pp sobre a baseline (p = 0.086; Cohen's *d* = +2.45, efeito grande). Preservar as representações multilíngues de baixo nível funciona como **regularizador** contra o viés de domínio.
+
+Os números, gráficos (heatmap + barplot de deltas) e o relatório completo estão em **[`docs/RESULTADOS-Etapa4.md`](docs/RESULTADOS-Etapa4.md)**. Reprodução com `python src/analise_etapa4.py` ou pelo notebook `notebooks/Trabalho_RNP_Colab_Etapa4.ipynb` (sem GPU).
+
+---
+
+## 5. Status do Projeto
 
 1. Engenharia de Dados (Filtros, Auditoria, Splits) — **Concluído (Etapa 1)**
 2. Implementação da Arquitetura C1-C4 — **Concluído (Etapa 2)**
 3. Pipeline de Treinamento e Extração de Métricas — **Concluído (Etapa 3)**
-4. **[AÇÃO PENDENTE] Análise Estatística e Visualização — (Etapa 4):**
-   Vamos calcular os p-valores (`mannwhitneyu`) e gerar matrizes de calor (Heatmaps) e gráficos de barras com `seaborn` para ilustrar de forma irrefutável os deltas das hipóteses derrubadas. O guia de execução desta etapa já está traçado no arquivo `docs/PLAN-Etapa4.md`.
+4. Análise Estatística e Visualização — **Concluído (Etapa 4)** ✅
+
+O ciclo experimental está fechado: dados → arquitetura → treino → análise. Os entregáveis finais (tabelas, gráficos e veredito das hipóteses) estão prontos para a defesa acadêmica.
 
 ---
 
-## 5. Estrutura do Repositório
+## 6. Estrutura do Repositório
 
 Nossa documentação e código estão enxutos e categorizados:
 
@@ -72,7 +86,11 @@ Nossa documentação e código estão enxutos e categorizados:
   * `DECISOES_E_DIFICULDADES.md`: O relatório técnico completo sobre as pivotagens de domínio citadas acima.
   * `Metodologia_Rascunho.md`: Estrutura base do *paper* científico.
   * `PLAN-Etapa*.md`: Documentos técnicos de planejamento de execução de código.
+  * `RESULTADOS-Etapa4.md`: Relatório final da análise estatística — tabelas, p-valores, deltas e veredito das hipóteses.
 * **`src/`**: Códigos-fonte (`.py`).
-* **`notebooks/`**: Onde a mágica acontece. Ambientes interativos (`.ipynb`) do Google Colab.
+  * `model.py`: arquitetura e algoritmo de congelamento (C1–C4).
+  * `analise_etapa4.py`: pipeline reprodutível da análise estatística e dos gráficos.
+* **`notebooks/`**: Onde a mágica acontece. Ambientes interativos (`.ipynb`) do Google Colab, incluindo `..._Etapa4.ipynb` (análise, sem GPU).
 * **`tests/`**: Testes unitários para proteção da lógica.
-* **`resultados/`**: (Opcional localmente) Armazena arquivos brutos de teste estatístico como o `results.csv`.
+* **`resultados/`**: Saídas da Etapa 4 — tabelas (`.csv`) e gráficos (`heatmap_f1_macro.png`, `barplot_deltas.png`).
+* **`results.csv`**: As 48 medições brutas (F1-macro e acurácia) geradas na Etapa 3 — input da Etapa 4.
