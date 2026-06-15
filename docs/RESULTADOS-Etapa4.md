@@ -110,13 +110,26 @@ Critério de confirmação (Metodologia): mitigação real exige **Δ ≥ +3 pp 
 
 ---
 
-## 6. Conclusões da Etapa 4
+## 6. Conclusões da Etapa 4 (conscientes das limitações)
 
-1. **Ambas as hipóteses originais foram refutadas pelos dados** — H1 por inexistência do Language Shift; H2 por inversão do efeito esperado.
-2. **O XLM-RoBERTa é robusto a Language Shift por construção:** transfere para PT *zero-shot* sem perda (até com ganho), graças ao pré-treinamento multilíngue compartilhado.
-3. **O único shift real é o de domínio**, e a melhor defesa contra ele é **C2 (Freeze Lower)** — resultado contraintuitivo e cientificamente valioso, que sustenta a narrativa de regularização por representações de baixo nível.
-4. **C4 (Frozen Encoder) é um piso inviável**: confirma que a tarefa exige adaptação do encoder, não apenas uma head linear.
-5. *Limitação:* n=3 seeds por célula limita o poder estatístico (MWU saturado em p=0.10); os tamanhos de efeito (Cohen's *d* grandes) reforçam a robustez das conclusões apesar do n baixo.
+> **Princípio adotado:** cada conclusão é declarada **amarrada ao seu escopo** e à limitação que a restringe. Evitamos generalizar além do que o desenho experimental sustenta. As limitações completas estão em [`Metodologia_Rascunho.md` §11](Metodologia_Rascunho.md); as condições de refutação, em §2.1.
+
+1. **Ambas as hipóteses originais foram refutadas** — H1 por ausência do fenômeno-alvo no par testado; H2 por inversão do efeito (C3 piorou).
+
+2. **Sobre o *Language Shift* (H1) — conclusão de escopo restrito, não lei geral.** *No par EN→PT*, não detectamos queda de língua: a baseline já performa igual ou melhor em PT (Δ T1−T3 = −0,83 pp) e C2 não altera isso (Δ = +0,03 pp, p = 0,93). **Mas esta leitura tem duas ressalvas que impedem a afirmação "o XLM-R é imune a *Language Shift*":**
+   - **Confound de qualidade de dados.** O conjunto PT é *ground-truth* (categoria B2W, ~100%), enquanto a baseline EN é ruidosa (keyword, 90–94%). O "ganho zero-shot" em PT está **confundido** com o fato de o conjunto PT ser mais limpo de rotular — pode ser artefato, não transferência.
+   - **Um único par de línguas próximas.** EN e PT são indo-europeias, escrita latina, alta cobertura no pré-treino. Línguas distantes (árabe, mandarim, hindi) provavelmente mostrariam degradação real.
+   - **Conclusão honesta:** *"no par EN↔PT, e dada a assimetria de qualidade dos conjuntos, não há *Language Shift* a mitigar."*
+
+3. **Sobre o *Domain Shift* (H2 e achado emergente) — robusto dentro do escopo, magnitude subestimada.** Como T1 e T2 são ambos EN, esta conclusão **não** sofre o confound de língua. O *Domain Shift* (Eletrônicos→Beleza) é real; congelar o topo (C3) o **agrava** (Δ = −2,97 pp, p = 0,074); e quem o **mitiga** é **C2 (Freeze Lower)** (Δ = +1,19 pp, p = 0,086, Cohen's *d* = +2,45). Isso sustenta a narrativa de **regularização por representações multilíngues de baixo nível**. *Ressalvas:* (a) escopo do par de domínios Eletrônicos→Beleza; (b) como o filtro EN é ruidoso, o *Domain Shift* real é **maior** que o medido — logo o efeito protetor de C2 está provavelmente **subestimado**, o que reforça a conclusão.
+
+4. **C4 (Frozen Encoder) é um piso inviável** — a tarefa exige adaptação do encoder, não só uma head linear. *Ressalva:* o LR fixo (2e-5) pode subtreinar o C4; um LR maior poderia elevar esse piso.
+
+5. **Robustez estatística.** n=3 seeds limita o poder (MWU satura em p=0.10); os Cohen's *d* grandes reforçam as conclusões apesar do n baixo, mas não substituem mais seeds.
+
+### 6.1 O que refutaria nossas conclusões (e o próximo experimento)
+
+A pergunta "**o que refutaria nossa teoria?**" tem resposta direta: **testar em outra língua**. Se a ausência de *Language Shift* observada em EN→PT **não** se repetir numa língua tipologicamente distante, fica provado que o resultado é um artefato da proximidade EN/PT, e não robustez do modelo. Por isso o **próximo passo prioritário** é adicionar uma 5ª célula de teste numa língua distante (e, em paralelo, trocar o filtro EN por keyword por um classificador de domínio para eliminar o confound de qualidade). Detalhes em [`Metodologia_Rascunho.md` §2.1 e §12](Metodologia_Rascunho.md).
 
 ---
 

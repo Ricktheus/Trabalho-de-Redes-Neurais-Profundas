@@ -1,10 +1,14 @@
-# Metodologia — Semana 2
+# Metodologia
 
 **Projeto:** Análise Arquitetural do Congelamento de Camadas na Mitigação de *Domain Shift* e *Language Shift* em Transformers Multilíngues
 
 > **Como usar este arquivo:** este é um rascunho enxuto, em estilo de paper, das seções que vocês precisam entregar. Ajustar o texto onde estiver `[CONFIRMAR]` e onde tiverem decisões diferentes. Cole no Word/Docs para formatar.
 >
 > **Atualização (pós-Fase 2):** os domínios passaram de *Produto × Logística* para **Eletrônicos × Beleza**; a filtragem PT passou de palavra-chave para **categoria do produto** (`site_category_lv1`); e o balanceamento passou a ser **desacoplado** (treino independente das células de teste). As seções 1, 2, 5 e 8 já refletem essas decisões.
+
+> **Estado atual da entrega (pós-Etapa 4 — análise concluída).** O que já está **definido e executado**: (i) pergunta de pesquisa, hipóteses e critérios de suporte (§1–§2); (ii) arquitetura, head, esquema de rótulos e as 4 configurações de congelamento C1–C4 (§3, §4, §6); (iii) pipeline de dados (filtro híbrido EN-keyword / PT-categoria, balanceamento desacoplado), com filtro EN auditado em 90–94% (§5); (iv) protocolo de treino dos 12 modelos e a matriz de 48 avaliações (§7–§8); (v) análise estatística completa — agregação, Δ-shift, testes (Welch *t*, Mann-Whitney U, Cohen's *d*) e veredito das hipóteses (§9, ver resultados em [`RESULTADOS-Etapa4.md`](RESULTADOS-Etapa4.md)).
+>
+> **A limitação que mais impacta a leitura dos resultados nesta entrega** é a **assimetria de qualidade entre os conjuntos de teste** (EN por palavra-chave, ruidoso; PT por categoria, *ground-truth*) somada ao fato de o *Language Shift* ter sido medido em **um único par de línguas próximas** (EN↔PT). Como detalhado em §11, essa assimetria **confunde** parte do "ganho zero-shot" observado em português e **limita o escopo** da conclusão sobre *Language Shift*. As condições que refutariam nossas conclusões estão explicitadas em §2.1 (a principal: **testar em outra língua, tipologicamente distante**).
 
 ---
 
@@ -26,6 +30,18 @@ Apoiados pela literatura de interpretabilidade de Transformers (BERTology), part
 - **H2 (Domain Shift):** Congelar as camadas finais do encoder (camadas 6 a 11), que codificam abstrações semânticas alinhadas à tarefa, reduz em pelo menos **3 pontos de F1-macro** a queda observada entre Eletrônicos/EN e Beleza/EN, comparado ao fine-tuning completo.
 
 - **H0 (Hipótese Nula):** As estratégias de congelamento têm efeito estatisticamente equivalente nas duas degradações.
+
+### 2.1 Condições de Refutação (Falseabilidade)
+
+Uma hipótese só é científica se for possível dizer **o que a derrubaria**. Declaramos antecipadamente os observáveis que refutam cada afirmação do trabalho:
+
+| Afirmação | O que a **refutaria** |
+|-----------|----------------------|
+| **H1** — congelar a base mitiga *Language Shift* | Δ `F1(C2,T3) − F1(C1,T3) < 3 pts` ou p ≥ 0.1 (refutada). *Pré-requisito:* só faz sentido testar se existir queda de língua na baseline (`F1(T1) > F1(T3)`). |
+| **H2** — congelar o topo mitiga *Domain Shift* | Δ `F1(C3,T2) − F1(C1,T2) < 3 pts` ou p ≥ 0.1 (refutada). |
+| **Tese emergente** — "o XLM-R é robusto a *Language Shift* / congelar a base regulariza contra *Domain Shift*" | **O teste decisivo é replicar em outra língua, tipologicamente distante e/ou de outro sistema de escrita** (ex.: árabe, mandarim, hindi, suaíli). Se a "ausência de *Language Shift*" observada em EN→PT **não se repetir** numa língua distante, a conclusão se revela um artefato da proximidade EN/PT (ambas indo-europeias, escrita latina, alta cobertura no pré-treino), e não uma propriedade geral do modelo. |
+
+> **Implicação metodológica.** Como a generalização da tese sobre *Language Shift* exige um segundo par de línguas, **nesta entrega ela é tratada como conclusão de escopo restrito** (válida para EN↔PT), não como lei geral. Adicionar uma língua distante é o próximo passo experimental prioritário (§11, §12).
 
 ---
 
@@ -217,15 +233,34 @@ Threshold de significância relaxado (0.1 em vez de 0.05) considerando o n=3.
 
 ## 11. Limitações Conhecidas
 
-Reconhecemos as seguintes limitações do desenho experimental:
+Reconhecemos as seguintes limitações do desenho experimental. As três primeiras são as que **mais impactam a interpretação dos resultados** desta entrega e estão amarradas, em §11.bis, às conclusões que elas restringem.
 
-1. **Atribuição de domínio assimétrica.** No lado EN usamos filtro lexical (proxy imperfeita; precisão auditada ≈ 90–94%, ou seja, ~6–10% de ruído). No lado PT usamos a categoria do produto (ground-truth). O domínio semântico ("eletrônicos", "beleza") é o mesmo nas duas línguas, mas o *método* de atribuição difere — assimetria declarada e aceita.
-2. **Número de seeds limitado (n=3)** por restrição computacional. Reduz robustez estatística.
-3. **XLM-R-base, não XLM-R-large.** A escolha é por custo. O resultado pode não generalizar para modelos maiores.
-4. **Tamanho das células de teste.** As 4 células são balanceadas ao menor compartimento — a validação interna S1-val (~1.340 por classe, ≈ 2.680 por célula) —, abaixo do teto de 5.000 da estimativa inicial. É suficiente para F1-macro sobre 3 seeds, mas implica intervalos de confiança um pouco mais largos.
-5. **Mapeamento estrelas → sentimento binário** é uma simplificação que descarta neutralidade.
-6. **Granularidade do freezing.** Testamos uma partição binária (0–5 vs 6–11). Não exploramos partições mais finas (ex: congelar apenas embeddings, ou apenas 0–2).
-7. **Hiperparâmetros não ajustados por configuração.** Mantemos LR fixo em 2e-5 em todas as configs para isolamento da variável "freezing", mas a literatura sugere que freezing parcial pode beneficiar-se de LR mais alto.
+1. **Filtro lexical EN e o problema das palavras ambíguas (a "trava" principal).** A base Amazon (`amazon_polarity`) **não traz a categoria do produto**, então o domínio no lado inglês é atribuído por palavras-chave sobre o texto — uma *proxy* imperfeita. O obstáculo de fundo é a **polissemia/homonímia**: a mesma palavra de superfície assume sentidos de domínios diferentes (ex.: *tablet* = dispositivo eletrônico **ou** comprimido/suplemento; *foundation* = base de maquiagem **ou** fundação; *charge* = carregar bateria **ou** cobrança), e o filtro não distingue o sentido — só a forma. Já mitigamos isso removendo termos comprovadamente ambíguos (`screen`, `camera`, `display`, `speaker`, `keyboard`, `processor`) e exigindo "tem keyword do domínio E nenhuma do outro", mas resta ruído residual: a auditoria mediu **90–94% de precisão**, ou seja, **6–10% das avaliações EN podem estar no domínio errado**. *Impacto direto nos resultados:* como **T1 (S1-val/EN) e T2 (S2/EN) saem do mesmo filtro ruidoso**, parte das avaliações de eletrônicos e de beleza se confundem, tornando os dois conjuntos **mais parecidos do que os domínios reais**. Isso **subestima** a magnitude verdadeira do *Domain Shift*: o Δ medido (+3,3 pts na baseline) é um **piso**, não o valor real. Aprofundar a desambiguação (ex.: classificador de domínio em vez de keyword, ou um dataset EN com categoria) fica como trabalho da próxima semana.
+
+2. **Confound entre qualidade do conjunto e efeito de língua.** Decorre direto de (1): o lado **PT é *ground-truth*** (categoria oficial do B2W, ~100% de precisão) enquanto o lado **EN é ruidoso** (keyword, 90–94%). Logo, a baseline T1 (EN) carrega ruído de rótulo de domínio que T3 (PT) **não** tem. O "ganho zero-shot" que observamos (`F1(T3) > F1(T1)`, isto é, o modelo parece **melhor** em português do que em inglês) **não pode ser atribuído puramente à robustez cross-lingual** — ele está **confundido** com o fato de o conjunto português ser simplesmente mais limpo de rotular. É plausível que parte (ou todo) do ganho seja artefato de qualidade de dados, não transferência de língua. Essa é a limitação mais séria para a leitura de H1.
+
+3. **Escopo de um único par de línguas (próximas).** O *Language Shift* foi medido **só** em EN→PT — duas línguas indo-europeias, de escrita latina, com muitos cognatos e **ambas de alta cobertura** no pré-treino do XLM-R. A conclusão "não há *Language Shift*" é, portanto, **de escopo restrito a esse par fácil**. Línguas tipologicamente distantes e/ou de outro sistema de escrita (árabe, mandarim, hindi, suaíli) provavelmente exibiriam degradação real — esse é exatamente o teste de refutação previsto em §2.1.
+
+4. **Número de seeds limitado (n=3)** por restrição computacional. Reduz a robustez estatística (o Mann-Whitney U satura em p=0.10 com n=3 vs 3); reportamos Cohen's *d* (efeitos grandes) para compensar, mas os intervalos de confiança são largos.
+
+5. **XLM-R-base, não XLM-R-large.** A escolha é por custo. O resultado pode não generalizar para modelos maiores (a capacidade extra do *large* poderia alterar o equilíbrio entre as camadas congeladas e treináveis).
+
+6. **Tamanho das células de teste.** As 4 células são balanceadas ao menor compartimento — a validação interna S1-val (~1.340 por classe, ≈ 2.680 por célula). Suficiente para F1-macro sobre 3 seeds, mas implica intervalos de confiança um pouco mais largos.
+
+7. **Mapeamento estrelas → sentimento binário** é uma simplificação que descarta neutralidade (nota 3).
+
+8. **Granularidade do freezing.** Testamos uma partição binária (0–5 vs 6–11). Não exploramos partições mais finas (ex.: congelar apenas embeddings, ou apenas 0–2), que poderiam localizar melhor onde mora o efeito regularizador observado em C2.
+
+9. **Hiperparâmetros não ajustados por configuração.** Mantemos LR fixo em 2e-5 em todas as configs para isolar a variável "freezing", mas a literatura sugere que freezing parcial pode beneficiar-se de LR mais alto — C4 (frozen encoder), em especial, pode estar subtreinado.
+
+### 11.bis Conclusões Parciais (conscientes das limitações)
+
+O que **podemos** afirmar com os dados atuais, **cada conclusão amarrada ao seu escopo e à limitação que a restringe**:
+
+- **H1 refutada — mas por escopo, não por prova geral.** *Para o par EN→PT*, não há *Language Shift* a mitigar (a baseline já não cai em PT) e C2 não muda isso (Δ ≈ +0,03 pt, p ≈ 0,93). **Porém**, essa leitura está contaminada pelo confound da limitação 2 (PT mais limpo que EN) e restrita ao par fácil da limitação 3. **Conclusão honesta:** "no par EN↔PT, e dada a assimetria de qualidade dos conjuntos, não detectamos *Language Shift*" — **não** "o XLM-R é imune a *Language Shift*".
+- **H2 refutada e invertida — robusta dentro do escopo de domínio testado.** Congelar o topo (C3) **piorou** o *Domain Shift* (Δ ≈ −2,97 pts, p ≈ 0,074). Esta conclusão depende menos do confound de língua (T1 e T2 são ambos EN), mas seu **escopo é o par de domínios Eletrônicos→Beleza**; outros pares de domínio podem se comportar diferente.
+- **Achado emergente (C2 regulariza contra *Domain Shift*) — promissor, com magnitude subestimada.** C2 vs C1 em T2: Δ ≈ +1,19 pt, p ≈ 0,086, efeito grande. Como o *Domain Shift* real é maior que o medido (limitação 1), o efeito protetor de C2 também pode estar subestimado. Conclusão de escopo restrito a Eletrônicos→Beleza, EN.
+- **C4 (frozen encoder) é piso inviável** — mas ver limitação 9 (pode estar subtreinado pelo LR fixo).
 
 ---
 
@@ -244,6 +279,12 @@ Reconhecemos as seguintes limitações do desenho experimental:
 | 10 | Revisão do paper |
 | 11 | Slides de apresentação + ensaio |
 | 12 | Apresentação final |
+
+**Próximos passos prioritários (decorrentes das limitações §11), em ordem:**
+
+1. **Testar em uma língua tipologicamente distante** (ex.: árabe, mandarim ou hindi) — é o teste de refutação de §2.1 e o que separa "robustez real a *Language Shift*" de "artefato do par fácil EN↔PT". **Maior prioridade científica.**
+2. **Desambiguar o domínio no lado EN** — trocar o filtro por palavra-chave por um classificador de domínio (ou adotar um dataset EN com categoria), atacando a polissemia da limitação 1 e removendo o confound da limitação 2. *(pode ficar para a próxima semana)*
+3. **Partições de freezing mais finas** (só embeddings, só 0–2, etc.) para localizar onde mora o efeito regularizador de C2.
 
 ---
 

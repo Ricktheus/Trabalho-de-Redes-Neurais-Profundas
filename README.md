@@ -64,6 +64,8 @@ O veredito foi cirúrgico:
 
 Os números, gráficos (heatmap + barplot de deltas) e o relatório completo estão em **[`docs/RESULTADOS-Etapa4.md`](docs/RESULTADOS-Etapa4.md)**. Reprodução com `python src/analise_etapa4.py` ou pelo notebook `notebooks/Trabalho_RNP_Colab_Etapa4.ipynb` (sem GPU).
 
+> **⚠️ Escopo das conclusões (consciência das limitações).** O resultado sobre *Language Shift* é **restrito ao par EN↔PT** — duas línguas próximas e de alta cobertura no XLM-R — e ainda está **confundido** com o fato de o conjunto português ser *ground-truth* (categoria) enquanto a baseline inglesa é ruidosa (filtro por palavra-chave, ~90–94% de precisão). Não afirmamos que "o XLM-R é imune a *Language Shift*". **O que refutaria essa tese é testar em outra língua, tipologicamente distante** — esse é o próximo experimento prioritário. As limitações completas e as condições de refutação estão em [`docs/Metodologia_Rascunho.md`](docs/Metodologia_Rascunho.md) (§11 e §2.1).
+
 ---
 
 ## 5. Status do Projeto
