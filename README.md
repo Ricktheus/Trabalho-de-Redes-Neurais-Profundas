@@ -79,8 +79,20 @@ Tabelas, gráficos (heatmap e barplot de deltas) e o relatório completo estão 
 | 2 | Implementação da arquitetura e do congelamento C1–C4 | Concluída |
 | 3 | Pipeline de treino e extração de métricas (12 modelos) | Concluída |
 | 4 | Análise estatística e visualização | Concluída |
+| 5 | Replicação (6–8 seeds, 3 integrantes) e teste de língua distante | Concluída (Passo A em aberto — ver abaixo) |
 
 O ciclo experimental está fechado (dados → arquitetura → treino → análise). Os entregáveis de análise (tabelas, gráficos e veredito das hipóteses) estão disponíveis para a defesa.
+
+### 4.1 Etapa 5 — Replicação independente e língua distante
+
+Três integrantes re-executaram as configurações C1–C4 com **seeds independentes** (`results_etapa5.csv`, 182 medições), elevando o N de 3 para **6–8 seeds** por configuração e adicionando uma tentativa de teste em **língua distante** (Japonês/Mandarim, dataset MARC).
+
+- **Replicação confirma a Etapa 4.** As configs viáveis (C1/C2/C3) reproduzem as médias da Etapa 4 dentro de **< 1 pp**, com seeds totalmente diferentes. H1 e H2 seguem **refutadas** — H2 agora com evidência forte (C3 piora o domínio: **Δ = −3.10 pp, p < 0.001**, antes apenas p = 0.074).
+- **Correção honesta.** O "achado emergente" da Etapa 4 (C2 mitiga *Domain Shift*) **não replica**: com mais seeds, C2 vs C1 em Beleza dá Δ = +0.21 pp (p = 0.42). C2 é **estatisticamente equivalente** à C1 — seu valor é a **eficiência** (treina ~50% menos parâmetros sem perda), não a regularização.
+- **C4 (Frozen Encoder) é instável**, não apenas fraco: o F1 varia de 0.36 a 0.81 entre seeds (desvio ≈ 16× o das demais). *Probing* linear do XLM-R nesta tarefa é uma loteria de seed.
+- **Passo A em aberto.** As células de língua distante (T5=JA, T6=ZH, T7=EN-âncora) saíram **byte-a-byte idênticas** em todas as 26 execuções — o carregador do espelho MARC ignorou o filtro de língua e avaliou o mesmo conjunto três vezes. A decomposição EN→JA vs EN→ZH não está disponível; a correção (pequena) e o caminho de re-execução barata estão documentados.
+
+Relatório completo: **[`docs/RESULTADOS-Etapa5.md`](docs/RESULTADOS-Etapa5.md)**. Conteúdo para slides (Gamma): **[`docs/APRESENTACAO-Etapa5.md`](docs/APRESENTACAO-Etapa5.md)**. Reprodução: `python src/analise_etapa5.py` (não requer GPU).
 
 ---
 
@@ -92,10 +104,14 @@ O ciclo experimental está fechado (dados → arquitetura → treino → anális
   * `Metodologia_Rascunho.md`: estrutura base do paper, incluindo limitações (§11) e falseabilidade (§2.1).
   * `PLAN-Etapa*.md`: documentos de planejamento de execução por etapa.
   * `RESULTADOS-Etapa4.md`: relatório da análise estatística (tabelas, p-valores, deltas e veredito das hipóteses).
+  * `RESULTADOS-Etapa5.md`: replicação com 6–8 seeds, teste de língua distante e alerta de integridade do Passo A.
+  * `APRESENTACAO-Etapa5.md`: conteúdo pronto para gerar os slides (Gamma).
 * **`src/`** — código-fonte.
   * `model.py`: arquitetura e algoritmo de congelamento (C1–C4).
-  * `analise_etapa4.py`: pipeline reprodutível da análise estatística e dos gráficos.
-* **`notebooks/`** — notebooks executáveis (Google Colab), incluindo `..._Etapa4.ipynb` (análise, sem GPU).
+  * `analise_etapa4.py`: pipeline reprodutível da análise estatística e dos gráficos (Etapa 4).
+  * `analise_etapa5.py`: combinação dos CSVs dos três integrantes, testes estatísticos e gráficos (Etapa 5).
+* **`notebooks/`** — notebooks executáveis (Google Colab / Kaggle), incluindo `..._Etapa4.ipynb` (análise) e `Trabalho_RNP_Kaggle_Etapa5.ipynb` (Passo A/C/D).
 * **`tests/`** — testes unitários da lógica de congelamento.
-* **`resultados/`** — saídas da Etapa 4: tabelas (`.csv`) e gráficos (`heatmap_f1_macro.png`, `barplot_deltas.png`).
-* **`results.csv`** — as 48 medições brutas (F1-macro e acurácia) geradas na Etapa 3; entrada da Etapa 4.
+* **`resultados/`** — saídas das análises: tabelas (`.csv`) e gráficos. Etapa 4: `heatmap_f1_macro.png`, `barplot_deltas.png`. Etapa 5: `*_etapa5.png/.csv` e os CSVs brutos por integrante em `etapa5_raw/`.
+* **`results.csv`** — as 48 medições da Etapa 3 (entrada da Etapa 4).
+* **`results_etapa5.csv`** — as 182 medições combinadas dos três integrantes (entrada da Etapa 5).
