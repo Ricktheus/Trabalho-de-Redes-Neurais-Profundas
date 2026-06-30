@@ -136,7 +136,7 @@ Analises com poucas seeds sugeriam que a **C2 protegeria contra o Domain Shift**
 A pergunta que **decide** a tese: a ausencia de *Language Shift* em EN->PT se mantem em **Japones/Mandarim**?
 
 - Celulas **T5 (JA)**, **T6 (ZH)** e **T7 (EN-ancora)** do MARC; a comparacao **T7 -> T5/T6** isola a distancia linguistica.
-- **Salvaguarda de validade:** carregar a lingua de forma **posicional** e **validar** a lingua recebida (`assert not df_ja_raw.equals(df_zh_raw)`) - sem isso, as celulas podem colapsar no mesmo conjunto.
+- **Carregamento robusto:** carregar a lingua de forma **posicional** e **conferir** a lingua recebida (`assert not df_ja_raw.equals(df_zh_raw)`), garantindo que JA, ZH e EN sejam conjuntos distintos.
 - **Execucao barata:** os modelos C1-C4 ja treinados sao reaproveitados; basta avaliar nas novas celulas.
 
 ---
