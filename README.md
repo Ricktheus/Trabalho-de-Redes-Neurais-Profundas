@@ -110,7 +110,7 @@ Relatório completo: **[`docs/RESULTADOS-Etapa5.md`](docs/RESULTADOS-Etapa5.md)*
   * `model.py`: arquitetura e algoritmo de congelamento (C1–C4).
   * `analise_etapa4.py`: pipeline reprodutível da análise estatística e dos gráficos (Etapa 4).
   * `analise_etapa5.py`: combinação dos CSVs dos três integrantes, testes estatísticos e gráficos (Etapa 5).
-* **`notebooks/`** — notebooks executáveis (Google Colab / Kaggle), incluindo `..._Etapa4.ipynb` (análise) e `Trabalho_RNP_Kaggle_Etapa5.ipynb` (Passo A/C/D).
+* **`notebooks/`** — notebooks executáveis (Google Colab / Kaggle). Destaque para `Trabalho_RNP_Colab_Completo.ipynb`, que reúne **todo o percurso ponta a ponta** (pergunta de pesquisa, fundamentação, hipóteses, engenharia de dados, arquitetura, treino e análise estatística consolidada multi-seed); inclui também `..._Etapa4.ipynb` (análise) e `Trabalho_RNP_Kaggle_Etapa5.ipynb` (experimento de língua distante).
 * **`tests/`** — testes unitários da lógica de congelamento.
 * **`resultados/`** — saídas das análises: tabelas (`.csv`) e gráficos. Etapa 4: `heatmap_f1_macro.png`, `barplot_deltas.png`. Etapa 5: `*_etapa5.png/.csv` e os CSVs brutos por integrante em `etapa5_raw/`.
 * **`results.csv`** — as 48 medições da Etapa 3 (entrada da Etapa 4).

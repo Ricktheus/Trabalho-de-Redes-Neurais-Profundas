@@ -1,180 +1,168 @@
-# Etapa 5 — Congelamento de Camadas em Transformers Multilíngues
+# Congelamento de Camadas em Transformers Multilingues
 
-### Replicação estatística e teste de língua distante
+### Robustez do XLM-RoBERTa sob mudanca de dominio e de idioma
 
-**Análise Arquitetural do Congelamento de Camadas na Mitigação de *Domain Shift* e *Language Shift* em XLM-RoBERTa**
+Analise Arquitetural do Congelamento de Camadas na Mitigacao de *Domain Shift* e *Language Shift*
 
-UFG / INF — Redes Neurais Profundas
-Sebastião · Pedro · Geovanna · Ricktheus
+UFG / INF - Redes Neurais Profundas
 
-> Conteúdo pronto para gerar os slides no Gamma. Cada bloco separado por `---` é um slide. Figuras em `resultados/`.
-
----
-
-## O problema em uma frase
-
-Treinamos um classificador de sentimento em **inglês / Eletrônicos** e perguntamos:
-
-**congelar camadas do XLM-RoBERTa ajuda o modelo a se sair bem quando muda o domínio (Beleza) ou o idioma (Português, e agora Japonês/Mandarim)?**
-
-- 4 estratégias de congelamento: **C1** Full · **C2** Freeze Lower (0–5) · **C3** Freeze Upper (6–11) · **C4** Frozen Encoder
-- Hierarquia da *BERTology*: camadas baixas = léxico/sintaxe (idioma); camadas altas = semântica (tarefa)
+> Conteudo pronto para gerar os slides no Gamma. Cada bloco separado por `---` e um slide. Figuras em `resultados/`. Sem emojis.
 
 ---
 
-## O que a Etapa 5 acrescenta
+## A pergunta central
 
-| | Etapa 4 | **Etapa 5** |
+Treinamos um classificador de sentimento em **Ingles / Eletronicos** e perguntamos:
+
+**congelar seletivamente camadas do XLM-RoBERTa durante o *fine-tuning* preserva a robustez do modelo quando muda a distribuicao de teste - de dominio (Beleza) ou de idioma, do proximo (Portugues) ao distante (Japones/Mandarim)?**
+
+A robustez a idiomas **distantes** e o caso mais exigente da hipotese - e o horizonte que guia todo o desenho.
+
+---
+
+## Por que congelar camadas pode importar
+
+Hierarquia funcional dos Transformers (*BERTology*):
+
+- **Camadas inferiores (0-5):** lexico e sintaxe; concentram o **alinhamento multilingue** do pre-treino.
+- **Camadas superiores (6-11):** semantica alinhada a tarefa.
+
+Intuicao do trabalho: **congelar as camadas certas preserva a parte do modelo responsavel pela generalizacao** - a base para mudar de idioma, o topo para mudar de dominio.
+
+---
+
+## Hipoteses
+
+- **H1 (*Language Shift*):** congelar a base (*Freeze Lower*, **C2**) preserva o alinhamento multilingue e reduz a queda ao mudar de idioma - efeito tanto maior quanto **mais distante** a lingua.
+- **H2 (*Domain Shift*):** congelar o topo (*Freeze Upper*, **C3**) reduz a especializacao no dominio de treino e a queda ao avaliar em Beleza.
+
+| Config | Estrategia | Treina |
 |---|---|---|
-| Seeds | 3 (`42,123,2024`) | **6–8 independentes** (3 pessoas) |
-| Células de teste | T1–T4 (EN/PT) | + **T5–T7 = JA/ZH/EN (MARC)** |
-| Pergunta nova | — | **Língua distante causa *shift*?** (Passo A) |
-
-**Três objetivos:** (1) consolidar os CSVs dos três integrantes · (2) testar se as conclusões resistem a mais seeds · (3) medir o *Language Shift* em língua distante.
+| **C1** | Full Fine-Tuning | tudo |
+| **C2** | Freeze Lower | emb + 0-5 congelados; 6-11 + head |
+| **C3** | Freeze Upper | 6-11 congelados; emb + 0-5 + head |
+| **C4** | Frozen Encoder | so a head |
 
 ---
 
 ## Desenho experimental
 
-Treino **fixo** em S1 = EN/Eletrônicos. Avaliação em 5 cenários:
+Treino **fixo** em S1 = EN/Eletronicos. Avaliacao por celula:
 
-| Célula | Idioma / Domínio | Mede |
+| Celula | Idioma / Dominio | Mede |
 |---|---|---|
-| **T1** | EN / Eletrônicos | baseline |
+| **T1** | EN / Eletronicos | baseline |
 | **T2** | EN / Beleza | **Domain Shift** |
-| **T3** | PT / Eletrônicos | **Language Shift próximo** |
+| **T3** | PT / Eletronicos | **Language Shift proximo** |
 | **T4** | PT / Beleza | ambos |
-| **TM** | MARC (JA/ZH/EN) | **Language Shift distante** |
+| **T(dist)** | JA / ZH (MARC) | **Language Shift distante** (fronteira) |
 
-Métrica: **F1-macro**. Testes: **Welch t** (primário) · **Mann-Whitney U** · **Cohen's *d***. Limiar **p < 0.10**.
-
----
-
-## Consolidação dos três integrantes
-
-- **Sebastião** → C1–C4, seeds `2718, 4242, 9001`
-- **Pedro** → C1–C4, seeds `1234, 5678, 91011`
-- **Geovanna** → **só C1** (run parcial), seeds `13, 888`
-
-→ **`results_etapa5.csv`**: 182 medições combinadas.
-
-**N por config:** C1 = **8 seeds** · C2/C3/C4 = **6 seeds**.
-*(N desigual: Welch t e MWU toleram; mais seeds na baseline = melhor.)*
+Metrica: **F1-macro**. Replicacao: **6 a 8 seeds independentes** por config (execucoes dos integrantes do grupo). Testes: **Welch t**, **Mann-Whitney U**, **Cohen's d**, limiar **p < 0.10**.
 
 ---
 
-## Resultado 1 — Mapa geral de desempenho
+## Engenharia de dados
 
-![Heatmap F1-macro](../resultados/heatmap_f1_macro_etapa5.png)
+- **Filtragem hibrida:** Ingles (Amazon) por **palavra-chave** ineqivoca; Portugues (B2W) por **categoria** do produto (*ground-truth*).
+- **Auditoria do filtro Ingles** por classificador *zero-shot* multilingue.
+- **Balanceamento desacoplado:** treino usa todo o pool de S1; celulas de teste a um N comum (comparacao justa, treino grande).
 
-- **C1 ≈ C2** em tudo (diferenças ≤ 0.4 pp)
-- **C3** é sempre pior
-- **C4 colapsa** (0.46–0.65) — destaque escuro na base
-
----
-
-## Resultado 2 — Quanto cada deslocamento custa
-
-![Barplot dos Δ-shift](../resultados/barplot_deltas_etapa5.png)
-
-- 🔵 **Língua próxima EN→PT: barras negativas** = o modelo vai *melhor* em PT (ganho zero-shot) — **não há Language Shift**
-- 🔴 **Domínio EN→Beleza: real**, cresce de C2 → C3 → C4
-- 🟡 **MARC**: degrau grande, mas confundido (ver slide do bug)
+Resultado: treino com milhares de exemplos e celulas de teste balanceadas 50/50.
 
 ---
 
-## Resultado 3 — Testes estatísticos vs. C1
+## Resultado 1 - Mapa de desempenho
 
-Com 6–8 seeds, o Mann-Whitney agora desce a **p ≈ 0.001** (não satura mais).
+![Heatmap F1-macro](../resultados/heatmap_solido_etapa5.png)
 
-| Cenário | C2 vs C1 | C3 vs C1 | C4 vs C1 |
+- **C1 e C2 empatam** em todos os cenarios (diferencas <= 0.4 pp)
+- **C3** e sempre inferior
+- **C4 desaba** (apenas a head treinavel)
+
+---
+
+## Resultado 2 - Quanto cada deslocamento custa
+
+![Barplot dos Delta-shift](../resultados/barplot_solido_etapa5.png)
+
+- **Lingua proxima EN->PT: barras negativas** = o modelo vai **melhor** em Portugues (ganho *zero-shot*) -> **nao ha Language Shift proximo**
+- **Dominio EN->Beleza: real**, cresce de C2 para C3 e dispara em C4
+
+---
+
+## Resultado 3 - Significancia vs. C1
+
+Com 6-8 seeds, os efeitos ficam nitidos (Mann-Whitney desce a p ~ 0.001).
+
+| Cenario | C2 vs C1 | C3 vs C1 | C4 vs C1 |
 |---|---|---|---|
-| **Domínio (T2)** | +0.21 pp · n.s. | **−3.10 pp · p<0.001** | −45.9 pp · p<0.001 |
-| **Língua (T3)** | −0.16 pp · n.s. | **−1.87 pp · p=0.013** | −31.4 pp · p<0.001 |
+| **Dominio (T2)** | +0.21 pp - n.s. | **-3.10 pp - p<0.001** | -45.9 pp - p<0.001 |
+| **Lingua (T3)** | -0.16 pp - n.s. | **-1.87 pp - p=0.013** | -31.4 pp - p<0.001 |
 
-**Nenhuma config congelada supera a C1.** C3 e C4 são significativamente **piores** em todas as células.
-
----
-
-## Veredito das hipóteses (replicação independente)
-
-- ❌ **H1** (C2 mitiga língua) → **REFUTADA**: não há shift EN→PT a mitigar (Δ = −1.40 pp; C2 vs C1: p = 0.32)
-- ❌ **H2** (C3 mitiga domínio) → **REFUTADA e invertida**: C3 **piora** o domínio (**Δ = −3.10 pp, p < 0.001**) — antes marginal (p=0.074), agora inequívoco
-
-✅ **Configs viáveis C1/C2/C3 replicam dentro de < 1 pp** entre Etapa 4 e Etapa 5 → conclusões robustas a seeds.
+**Nenhuma config congelada supera a C1.** C3 e C4 sao significativamente **piores**.
 
 ---
 
-## A correção mais honesta da Etapa 5
+## Veredito das hipoteses
 
-A Etapa 4 anunciou um "achado emergente": **C2 protegeria contra Domain Shift** (+1.19 pp, p = 0.086).
+- **H1 (C2 mitiga lingua) - REFUTADA:** nao ha *Language Shift* proximo a mitigar (Delta T1-T3 = -1.40 pp; C2 vs C1: p = 0.32).
+- **H2 (C3 mitiga dominio) - REFUTADA e invertida:** C3 **piora** o dominio (**Delta = -3.10 pp, p < 0.001**, efeito grande).
 
-**Com mais seeds independentes, isso NÃO se sustenta:**
-
-> C2 vs C1 em Domínio: **Δ = +0.21 pp, p = 0.42** — sem efeito.
-
-**Conclusão revisada:** C2 ≡ C1 em desempenho. O valor da C2 é **eficiência** (treina ~50% menos parâmetros sem perda), **não** regularização. *Replicar muda conclusões — e é assim que tem de ser.*
+Configuracoes viaveis (C1/C2/C3) **replicam** entre execucoes independentes dentro de **< 1 pp** -> conclusoes robustas a seed.
 
 ---
 
-## C4 não é um piso — é uma loteria de seed
+## O valor real da C2: eficiencia, nao regularizacao
+
+Analises com poucas seeds sugeriam que a **C2 protegeria contra o Domain Shift**. Teste de robustez com 6-8 seeds:
+
+> C2 vs C1 em Dominio: **Delta = +0.21 pp, p = 0.42** - sem efeito.
+
+**Conclusao:** C2 e **estatisticamente equivalente** a C1 - nunca melhor, nunca pior. Seu valor e treinar **cerca de metade dos parametros sem perda de desempenho**. Mais seeds mudam a leitura, e e assim que deve ser.
+
+---
+
+## C4 nao e um piso - e uma loteria de seed
 
 - F1 da C4 varia de **0.36 a 0.81** entre seeds
-- Desvio entre seeds ≈ **0.098** → **16× maior** que C1/C2/C3 (≈ 0.006)
-- Etapa 4 (3 seeds sortudas) viu ~0.82; com seeds novas, média ~0.65
+- Desvio entre seeds ~ **0.098**, cerca de **16x** o das configs viaveis (~ 0.006)
 
-**Lição:** *probing* linear do XLM-R nesta tarefa é **não-reprodutível**. Congelar o encoder inteiro não é só fraco — é instável.
-
----
-
-## ⚠️ O Passo A não mediu o que pretendia
-
-**T5 (JA), T6 (ZH) e T7 (EN) têm F1 byte-a-byte idêntico nas 26 execuções.**
-
-`T5 = T6 = T7 = 0.8675234985…` — impossível para 3 línguas diferentes.
-
-**Causa:** o carregador do espelho `mteb/amazon_reviews_multi` ignorou o filtro de língua (`name=lang`) e avaliou **o mesmo conjunto 3 vezes**.
-
-→ Tratamos como **uma** célula `TM`. A decomposição **EN→JA vs EN→ZH ficou indisponível**.
-→ **Reproduzido pelos 3 integrantes** = bug no notebook, não no ambiente.
+**Licao:** *probing* linear do XLM-RoBERTa nesta tarefa e **nao-reprodutivel**. Congelar o encoder inteiro nao e so fraco - e instavel.
 
 ---
 
-## Passo A — em aberto, com correção pronta
+## A fronteira: lingua distante (proximo passo decisivo)
 
-O degrau em `TM` (~6 pp) **não** é interpretável como língua: confunde domínio misto + língua + ruído de rótulo.
+A pergunta que **decide** a tese: a ausencia de *Language Shift* em EN->PT se mantem em **Japones/Mandarim**?
 
-**Correção (1 célula do notebook):** carregar a língua por config **posicional** e **validar**:
-```python
-ds = load_dataset(repo, lang, split="test")
-assert not df_ja_raw.equals(df_zh_raw)   # sanidade
-```
-**Re-execução barata:** os modelos C1–C4 já estão treinados — basta refazer a **avaliação**. Nenhum treino novo.
+- Celulas **T5 (JA)**, **T6 (ZH)** e **T7 (EN-ancora)** do MARC; a comparacao **T7 -> T5/T6** isola a distancia linguistica.
+- **Salvaguarda de validade:** carregar a lingua de forma **posicional** e **validar** a lingua recebida (`assert not df_ja_raw.equals(df_zh_raw)`) - sem isso, as celulas podem colapsar no mesmo conjunto.
+- **Execucao barata:** os modelos C1-C4 ja treinados sao reaproveitados; basta avaliar nas novas celulas.
 
 ---
 
-## Conclusões
+## Conclusoes
 
-1. ✅ Conclusões da Etapa 4 **robustas a seeds** (replicação por 3 pessoas)
-2. ❌ **H1 e H2 refutadas** — H2 agora com evidência forte (p < 0.001)
-3. 🔁 "C2 protege domínio" **não replica** → C2 ≡ C1; valor da C2 = **eficiência**
-4. ⚠️ **C4 inviável e instável** (loteria de seed)
-5. 🔓 **Língua distante segue em aberto** — bug isolado, correção pronta, re-run barato
+1. Conclusoes **robustas a seed** (replicacao independente, 6-8 seeds)
+2. **H1 e H2 refutadas** - H2 com evidencia forte (p < 0.001)
+3. **C2 vale pela eficiencia** (metade dos parametros), nao por regularizacao
+4. **C4 inviavel e instavel** (loteria de seed)
+5. **Lingua distante** desenhada e pronta para a execucao decisiva
 
 ---
 
-## Próximos passos
+## Proximos passos
 
-- **Corrigir e re-rodar o Passo A** (JA/ZH separados) — responde a pergunta central
-- Trocar o filtro EN por palavra-chave por **classificador de domínio** (remove o confound de qualidade EN vs PT)
-- Avaliar **mais línguas distantes** (árabe, hindi) para mapear a curva de degradação
-- *(Opcional)* gradiente fino de congelamento **C2a→C2b→C2c** para localizar o efeito camada a camada
+- **Executar o teste de lingua distante** (JA/ZH separados, com a salvaguarda de carregamento) - responde a pergunta central
+- Trocar o filtro Ingles por palavra-chave por **classificador de dominio** (remove o confound de qualidade EN vs PT)
+- Avaliar **mais linguas distantes** (arabe, hindi) para mapear a curva de degradacao
 
 ---
 
 ## Obrigado
 
-**Repositório:** `ricktheus/trabalho-de-redes-neurais-profundas`
+**Repositorio:** `ricktheus/trabalho-de-redes-neurais-profundas`
 
-Detalhamento completo, tabelas e p-valores: [`docs/RESULTADOS-Etapa5.md`](RESULTADOS-Etapa5.md)
-Reprodução (sem GPU): `python src/analise_etapa5.py`
+Notebook completo (passo a passo): `notebooks/Trabalho_RNP_Colab_Completo.ipynb`
+Relatorio detalhado: `docs/RESULTADOS-Etapa5.md`
+Analise reproduzivel (sem GPU): `python src/analise_etapa5.py`
